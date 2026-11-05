@@ -1,38 +1,40 @@
 def generate_report(problem_id, evaluation):
 
-    print("\n" + "=" * 65)
-
-    print("AI COMPUTER SCIENCE REASONING VALIDATION REPORT")
-
+    print("\n")
+    print("=" * 65)
+    print("DETAILED EVALUATION")
     print("=" * 65)
 
-    print(f"\nProblem ID: {problem_id}")
+    print(f"Problem ID: {problem_id}")
+    print(f"Final Score: {evaluation['score']}/{evaluation['maximum']}")
+    print(f"Verdict: {evaluation['verdict']}")
+
+    print("\nEvaluation Criteria")
+    print("-" * 65)
 
     print(
-        f"Final Score: {evaluation['score']}/"
-        f"{evaluation['maximum']}"
+        f"{'CRITERION':<30}"
+        f"{'SCORE':<12}"
+        f"{'MAXIMUM':<12}"
+        f"{'STATUS':<10}"
     )
-
-    print(f"Overall Verdict: {evaluation['verdict']}")
-
-    print("\nDETAILED EVALUATION")
 
     print("-" * 65)
 
     for criterion in evaluation["criteria"]:
 
-        status = (
-            "PASS" if criterion["passed"]
-            else "FAIL"
-        )
+        name = criterion["name"]
+        score = criterion["score"]
+        maximum = criterion["maximum"]
+
+        status = "PASS" if criterion["passed"] else "FAIL"
 
         print(
-            f"{criterion['criterion']:<30}"
-            f"{criterion['score']:>5}/"
-            f"{criterion['maximum']:<5}"
-            f"{status:>10}"
+            f"{name:<30}"
+            f"{score:<12}"
+            f"{maximum:<12}"
+            f"{status:<10}"
         )
 
     print("-" * 65)
-
-    print("\nEND OF REPORT")
+    print("=" * 65)

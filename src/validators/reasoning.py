@@ -1,117 +1,114 @@
 def evaluate_reasoning(answer):
+    """
+    Evaluate a Two Sum algorithm explanation
+    using a weighted 100-point rubric.
+    """
 
     algorithm = answer.get("algorithm", "").lower()
+    implementation = answer.get("implementation", "").lower()
+    complexity = answer.get("complexity", "").lower()
+    assumptions = answer.get("assumptions", [])
+    edge_cases = answer.get("edge_cases", [])
+    conclusion = answer.get("conclusion", "").lower()
 
-    implementation = answer.get(
-        "implementation", ""
-    ).lower()
+    criteria = []
 
-    complexity = answer.get(
-        "complexity", ""
-    ).lower()
-
-    assumptions = answer.get(
-        "assumptions", []
-    )
-
-    edge_cases = answer.get(
-        "edge_cases", []
-    )
-
-    conclusion = answer.get(
-        "conclusion", ""
-    ).lower()
-
-    results = []
-
-    # Algorithm correctness
-    algorithm_passed = (
+    # 1. Algorithm correctness: 20 points
+    algorithm_correct = (
         ("dictionary" in algorithm or "hash map" in algorithm)
         and "single pass" in implementation
     )
 
-    results.append({
-        "criterion": "Algorithm correctness",
-        "score": 20 if algorithm_passed else 0,
+    criteria.append({
+        "name": "Algorithm correctness",
+        "score": 20 if algorithm_correct else 0,
         "maximum": 20,
-        "passed": algorithm_passed
+        "passed": algorithm_correct
     })
 
-    # Complexity
-    complexity_passed = (
+    # 2. Complexity accuracy: 20 points
+    complexity_correct = (
         "o(n)" in complexity
         and "average" in complexity
     )
 
-    results.append({
-        "criterion": "Complexity accuracy",
-        "score": 20 if complexity_passed else 0,
+    criteria.append({
+        "name": "Complexity accuracy",
+        "score": 20 if complexity_correct else 0,
         "maximum": 20,
-        "passed": complexity_passed
+        "passed": complexity_correct
     })
 
-    # Constraints
-    constraints_passed = (
+    # 3. Constraint compliance: 20 points
+    constraint_correct = (
         "distinct" in implementation
         or "different indices" in implementation
         or "same element cannot be used twice" in implementation
     )
 
-    results.append({
-        "criterion": "Constraint compliance",
-        "score": 20 if constraints_passed else 0,
+    criteria.append({
+        "name": "Constraint compliance",
+        "score": 20 if constraint_correct else 0,
         "maximum": 20,
-        "passed": constraints_passed
+        "passed": constraint_correct
     })
 
-    # Assumptions
-    assumptions_passed = len(assumptions) > 0
+    # 4. Assumptions: 10 points
+    assumptions_correct = (
+        isinstance(assumptions, list)
+        and len(assumptions) > 0
+    )
 
-    results.append({
-        "criterion": "Assumptions",
-        "score": 10 if assumptions_passed else 0,
+    criteria.append({
+        "name": "Assumptions",
+        "score": 10 if assumptions_correct else 0,
         "maximum": 10,
-        "passed": assumptions_passed
+        "passed": assumptions_correct
     })
 
-    # Edge cases
-    edge_cases_passed = len(edge_cases) >= 2
+    # 5. Edge-case consideration: 10 points
+    edge_cases_correct = (
+        isinstance(edge_cases, list)
+        and len(edge_cases) >= 2
+    )
 
-    results.append({
-        "criterion": "Edge-case consideration",
-        "score": 10 if edge_cases_passed else 0,
+    criteria.append({
+        "name": "Edge-case consideration",
+        "score": 10 if edge_cases_correct else 0,
         "maximum": 10,
-        "passed": edge_cases_passed
+        "passed": edge_cases_correct
     })
 
-    # Conclusion
-    conclusion_passed = (
+    # 6. Conclusion validity: 20 points
+    conclusion_correct = (
         "o(n)" in conclusion
-        and ("hash map" in conclusion or "dictionary" in conclusion)
+        and (
+            "hash map" in conclusion
+            or "dictionary" in conclusion
+        )
     )
 
-    results.append({
-        "criterion": "Conclusion validity",
-        "score": 20 if conclusion_passed else 0,
+    criteria.append({
+        "name": "Conclusion validity",
+        "score": 20 if conclusion_correct else 0,
         "maximum": 20,
-        "passed": conclusion_passed
+        "passed": conclusion_correct
     })
 
-    total_score = sum(
-        item["score"] for item in results
-    )
+    # Calculate final score
+    total_score = sum(item["score"] for item in criteria)
+    maximum_score = 100
 
-    maximum_score = sum(
-        item["maximum"] for item in results
-    )
+    if total_score >= 80:
+        verdict = "PASS"
+    elif total_score >= 50:
+        verdict = "PARTIAL"
+    else:
+        verdict = "FAIL"
 
     return {
         "score": total_score,
         "maximum": maximum_score,
-        "verdict": (
-            "PASS" if total_score >= 80
-            else "PARTIAL" if total_score >= 50
-            else "FAIL"
-        ),
-        "criteria": results
+        "verdict": verdict,
+        "criteria": criteria
     }
