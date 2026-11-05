@@ -1,0 +1,12 @@
+{
+  "problem_id": "problem_001",
+  "answer": {
+    "algorithm": "Compare every element with every other element using nested loops.",
+    "implementation": "Loop through every pair and return the pair whose values add to the target.",
+    "complexity": "O(n) time and O(1) space.",
+    "assumptions": [
+      "The array contains positive numbers."
+    ],
+    "conclusion": "The algorithm runs in linear time."
+  }
+}

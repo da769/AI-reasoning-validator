@@ -1,0 +1,16 @@
+{
+  "id": "problem_001",
+  "category": "algorithms",
+  "difficulty": "medium",
+  "question": "Given an array of integers and a target value, return the indices of two distinct elements whose sum equals the target. Explain the algorithm and its time complexity.",
+  "constraints": [
+    "The same element cannot be used twice.",
+    "The solution should run in O(n) average time.",
+    "Return the indices of a valid pair."
+  ],
+  "expected_concepts": [
+    "hash_map",
+    "single_pass",
+    "O(n)_average_time"
+  ]
+}

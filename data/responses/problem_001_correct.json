@@ -1,0 +1,12 @@
+{
+  "problem_id": "problem_001",
+  "answer": {
+    "algorithm": "Use a dictionary to store values already encountered and their indices.",
+    "implementation": "For each value, calculate target - value. If the complement is already in the dictionary, return the stored index and current index. Otherwise store the current value and continue.",
+    "complexity": "O(n) average time and O(n) space.",
+    "assumptions": [
+      "The input contains at least one valid pair."
+    ],
+    "conclusion": "A hash map allows the pair to be found in one pass with O(n) average time."
+  }
+}
