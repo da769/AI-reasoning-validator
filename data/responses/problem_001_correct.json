@@ -1,12 +1,17 @@
 {
   "problem_id": "problem_001",
   "answer": {
-    "algorithm": "Use a dictionary to store values already encountered and their indices.",
-    "implementation": "For each value, calculate target - value. If the complement is already in the dictionary, return the stored index and current index. Otherwise store the current value and continue.",
+    "algorithm": "Use a dictionary or hash map to store previously encountered values and their indices.",
+    "implementation": "Process the array in a single pass. Calculate the complement of each value and check whether it exists in the dictionary. If found, return the two distinct indices.",
     "complexity": "O(n) average time and O(n) space.",
     "assumptions": [
       "The input contains at least one valid pair."
     ],
-    "conclusion": "A hash map allows the pair to be found in one pass with O(n) average time."
+    "edge_cases": [
+      "Duplicate values",
+      "Negative numbers",
+      "No valid pair"
+    ],
+    "conclusion": "A hash map allows the pair to be found in O(n) average time."
   }
 }
