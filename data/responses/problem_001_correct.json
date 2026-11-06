@@ -1,17 +1,35 @@
 {
-  "problem_id": "problem_001",
-  "answer": {
-    "algorithm": "Use a dictionary or hash map to store previously encountered values and their indices.",
-    "implementation": "Process the array in a single pass. Calculate the complement of each value and check whether it exists in the dictionary. If found, return the two distinct indices.",
-    "complexity": "O(n) average time and O(n) space.",
-    "assumptions": [
-      "The input contains at least one valid pair."
-    ],
-    "edge_cases": [
-      "Duplicate values",
-      "Negative numbers",
-      "No valid pair"
-    ],
-    "conclusion": "A hash map allows the pair to be found in O(n) average time."
-  }
+    "problem_id": "problem_001",
+    "answer": {
+        "algorithm": "Use a dictionary or hash map to store previously encountered values and their indices.",
+        "implementation": "Process the array in a single pass. Calculate the complement of each value and check whether it exists in the dictionary. If found, return the two distinct indices.",
+        "complexity": "O(n) average time and O(n) space.",
+        "assumptions": [
+            "The input contains at least one valid pair."
+        ],
+        "edge_cases": [
+            "Duplicate values",
+            "Negative numbers",
+            "No valid pair"
+        ],
+        "conclusion": "A hash map allows the pair to be found in O(n) average time."
+    },
+    "candidate_results": [
+        {
+            "test_id": "case_001",
+            "indices": [0, 1]
+        },
+        {
+            "test_id": "case_002",
+            "indices": [0, 1]
+        },
+        {
+            "test_id": "case_003",
+            "indices": [0, 1]
+        },
+        {
+            "test_id": "case_004",
+            "indices": [2, 3]
+        }
+    ]
 }

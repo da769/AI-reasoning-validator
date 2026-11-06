@@ -1,16 +1,38 @@
 {
-  "id": "problem_001",
-  "category": "algorithms",
-  "difficulty": "medium",
-  "question": "Given an array of integers and a target value, return the indices of two distinct elements whose sum equals the target. Explain the algorithm and its time complexity.",
-  "constraints": [
-    "The same element cannot be used twice.",
-    "The solution should run in O(n) average time.",
-    "Return the indices of a valid pair."
-  ],
-  "expected_concepts": [
-    "hash_map",
-    "single_pass",
-    "O(n)_average_time"
-  ]
+    "id": "problem_001",
+    "category": "algorithms",
+    "difficulty": "medium",
+    "question": "Given an array of integers and a target value, return the indices of two distinct elements whose sum equals the target. Explain the algorithm and its time complexity.",
+    "constraints": [
+        "The same element cannot be used twice.",
+        "The solution should run in O(n) average time.",
+        "Return the indices of a valid pair."
+    ],
+    "expected_concepts": [
+        "hash_map",
+        "single_pass",
+        "O(n)_average_time"
+    ],
+    "validation_cases": [
+        {
+            "test_id": "case_001",
+            "values": [2, 7, 11, 15],
+            "target": 9
+        },
+        {
+            "test_id": "case_002",
+            "values": [3, 3],
+            "target": 6
+        },
+        {
+            "test_id": "case_003",
+            "values": [-3, 4, 7],
+            "target": 1
+        },
+        {
+            "test_id": "case_004",
+            "values": [1, 2, 3, 4],
+            "target": 7
+        }
+    ]
 }
