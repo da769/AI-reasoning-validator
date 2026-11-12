@@ -1,126 +1,161 @@
 def generate_report(problem_id, evaluation):
 
     print("\n")
-    print("=" * 55)
-    print("              EVALUATION REPORT")
-    print("=" * 55)
+    print("=" * 65)
+    print("          AI COMPUTER SCIENCE REASONING VALIDATOR")
+    print("=" * 65)
 
     print(f"\nProblem ID: {problem_id}")
 
-    # Overall evaluation
-    print("\nOVERALL EVALUATION")
-    print("-" * 55)
+    print("\n" + "-" * 65)
+    print("OVERALL EVALUATION")
+    print("-" * 65)
 
     print(
-        f"Overall Score: "
-        f"{evaluation.get('score', 0)}/100"
+        f"Overall Score: {evaluation['score']}/100"
     )
 
     print(
-        f"Final Verdict: "
-        f"{evaluation.get('verdict', 'NOT AVAILABLE')}"
+        f"Final Verdict: {evaluation['verdict']}"
     )
 
-    # Reasoning evaluation
-    print("\n1. WRITTEN REASONING")
-    print("-" * 55)
+    # -----------------------------------------
+    # REASONING QUALITY
+    # -----------------------------------------
+
+    print("\n" + "-" * 65)
+    print("1. REASONING QUALITY (40%)")
+    print("-" * 65)
 
     print(
-        f"Raw Score: "
-        f"{evaluation.get('reasoning_score', 0)}/100"
-    )
-
-    print(
-        f"Weighted Score: "
-        f"{evaluation.get('weighted_reasoning_score', 0)}/50"
-    )
-
-    # Claimed answer validation
-    print("\n2. INDEPENDENT ANSWER VALIDATION")
-    print("-" * 55)
-
-    print(
-        f"Raw Score: "
-        f"{evaluation.get('validation_score', 0)}/100"
+        f"Raw Score: {evaluation['reasoning_score']}/100"
     )
 
     print(
         f"Weighted Score: "
-        f"{evaluation.get('weighted_validation_score', 0)}/25"
+        f"{evaluation['weighted_reasoning_score']}/40"
+    )
+
+    # -----------------------------------------
+    # CLAIMED ANSWER VALIDATION
+    # -----------------------------------------
+
+    print("\n" + "-" * 65)
+    print("2. CLAIMED ANSWER VALIDATION (20%)")
+    print("-" * 65)
+
+    print(
+        f"Raw Score: {evaluation['validation_score']}/100"
+    )
+
+    print(
+        f"Weighted Score: "
+        f"{evaluation['weighted_validation_score']}/20"
     )
 
     print(
         f"Passed Cases: "
-        f"{evaluation.get('passed_test_cases', 0)}/"
-        f"{evaluation.get('total_test_cases', 0)}"
+        f"{evaluation['passed_test_cases']}/"
+        f"{evaluation['total_test_cases']}"
     )
 
-    validation_details = evaluation.get(
-        "validation_details", {}
-    )
-
-    for result in validation_details.get("results", []):
+    for result in evaluation["validation_details"]["results"]:
 
         status = "PASS" if result["passed"] else "FAIL"
 
         print(
-            f"  {result['case_id']}: {status} - "
-            f"{result['feedback']}"
+            f"  {result['case_id']}: {status}"
+            f" - {result['feedback']}"
         )
 
-    # Actual Python execution
-    print("\n3. PYTHON CODE EXECUTION")
-    print("-" * 55)
+    # -----------------------------------------
+    # CODE EXECUTION
+    # -----------------------------------------
+
+    print("\n" + "-" * 65)
+    print("3. PYTHON CODE EXECUTION (25%)")
+    print("-" * 65)
 
     print(
         f"Execution Status: "
-        f"{evaluation.get('execution_status', 'UNKNOWN')}"
+        f"{evaluation['execution_status']}"
     )
 
     print(
-        f"Raw Score: "
-        f"{evaluation.get('execution_score', 0)}/100"
+        f"Raw Score: {evaluation['execution_score']}/100"
     )
 
     print(
         f"Weighted Score: "
-        f"{evaluation.get('weighted_execution_score', 0)}/25"
+        f"{evaluation['weighted_execution_score']}/25"
     )
 
     print(
         f"Passed Cases: "
-        f"{evaluation.get('execution_passed_cases', 0)}/"
-        f"{evaluation.get('execution_total_cases', 0)}"
+        f"{evaluation['execution_passed_cases']}/"
+        f"{evaluation['execution_total_cases']}"
     )
 
-    execution_details = evaluation.get(
-        "execution_details", {}
-    )
-
-    print(
-        f"Feedback: "
-        f"{execution_details.get('feedback', 'Not available')}"
-    )
-
-    for result in execution_details.get("results", []):
+    for result in evaluation["execution_details"]["results"]:
 
         status = "PASS" if result["passed"] else "FAIL"
 
         print(
-            f"  Test Case {result['test_case']}: {status} - "
-            f"{result['feedback']}"
+            f"  {result['case_id']}: {status}"
+            f" - {result['feedback']}"
         )
 
-    # Final feedback
-    print("\n4. EVALUATION FEEDBACK")
-    print("-" * 55)
+    # -----------------------------------------
+    # REASONING-TO-CODE CONSISTENCY
+    # -----------------------------------------
 
-    feedback = evaluation.get("feedback", {})
+    print("\n" + "-" * 65)
+    print("4. REASONING-TO-CODE CONSISTENCY (15%)")
+    print("-" * 65)
 
-    for category, message in feedback.items():
+    print(
+        f"Raw Score: {evaluation['consistency_score']}/100"
+    )
 
-        print(f"{category.title()}: {message}")
+    print(
+        f"Weighted Score: "
+        f"{evaluation['weighted_consistency_score']}/15"
+    )
 
-    print("\n" + "=" * 55)
-    print("              END OF REPORT")
-    print("=" * 55)
+    consistency = evaluation["consistency_details"]
+
+    print(
+        f"Consistency Verdict: {consistency['verdict']}"
+    )
+
+    print(
+        f"Feedback: {consistency['feedback']}"
+    )
+
+    for finding in consistency.get("findings", []):
+
+        status = "PASS" if finding["passed"] else "FAIL"
+
+        print(
+            f"  [{status}] {finding['criterion']}"
+        )
+
+        print(
+            f"       {finding['feedback']}"
+        )
+
+    # -----------------------------------------
+    # FINAL FEEDBACK
+    # -----------------------------------------
+
+    print("\n" + "-" * 65)
+    print("FINAL FEEDBACK")
+    print("-" * 65)
+
+    for category, feedback in evaluation["feedback"].items():
+
+        print(f"{category.capitalize()}: {feedback}")
+
+    print("\n" + "=" * 65)
+    print("                 END OF EVALUATION")
+    print("=" * 65)

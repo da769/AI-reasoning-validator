@@ -1,54 +1,72 @@
+import json
+
 from src.validators.reasoning import evaluate_reasoning
 from src.validators.algorithm import validate_two_sum_result
 from src.validators.code_execution import evaluate_python_submission
+from src.validators.consistency import evaluate_consistency
 
 
-# Evaluation weights
-REASONING_WEIGHT = 50
-VALIDATION_WEIGHT = 25
+# -------------------------------------------------
+# EVALUATION WEIGHTS
+# -------------------------------------------------
+
+REASONING_WEIGHT = 40
+VALIDATION_WEIGHT = 20
 EXECUTION_WEIGHT = 25
+CONSISTENCY_WEIGHT = 15
 
 PASS_THRESHOLD = 80
 PARTIAL_THRESHOLD = 50
 
 
+# -------------------------------------------------
+# EXTRACT REASONING TEXT
+# -------------------------------------------------
+
+def get_reasoning_data(response):
+    """
+    Extract structured reasoning data.
+    Preserves dictionaries for reasoning.py.
+    """
+
+    if isinstance(response, dict):
+
+        answer = (
+            response.get("answer")
+            or response.get("reasoning")
+            or response.get("explanation")
+            or response.get("response")
+            or ""
+        )
+
+        return answer
+
+    return response
+
+
 def get_reasoning_text(response):
     """
-    Extract the written explanation from an AI response.
-
-    Supports common response field names.
+    Convert reasoning data into text for consistency analysis.
     """
 
-    if isinstance(response, str):
-        return response
+    import json
 
-    if not isinstance(response, dict):
-        return ""
+    answer = get_reasoning_data(response)
 
-    return (
-        response.get("answer")
-        or response.get("reasoning")
-        or response.get("explanation")
-        or response.get("response")
-        or ""
-    )
+    if isinstance(answer, str):
+        return answer
 
+    if isinstance(answer, (dict, list)):
+        return json.dumps(answer, ensure_ascii=False)
+
+    return str(answer)
+
+
+# -------------------------------------------------
+# EXTRACT CANDIDATE RESULTS
+# -------------------------------------------------
 
 def get_candidate_results(response):
-    """
-    Extract independently claimed results from the response.
-
-    Expected format:
-
-    {
-        "candidate_results": [
-            {
-                "case_id": "case_001",
-                "indices": [0, 1]
-            }
-        ]
-    }
-    """
 
     if not isinstance(response, dict):
         return []
@@ -56,18 +74,17 @@ def get_candidate_results(response):
     return response.get("candidate_results", [])
 
 
-def validate_claimed_results(response, problem):
-    """
-    Independently validate the candidate's claimed Two Sum answers.
+# -------------------------------------------------
+# VALIDATE CLAIMED RESULTS
+# -------------------------------------------------
 
-    Each claimed result is checked against its corresponding
-    problem validation case.
-    """
+def validate_claimed_results(response, problem):
 
     validation_cases = problem.get("validation_cases", [])
     candidate_results = get_candidate_results(response)
 
     if not validation_cases:
+
         return {
             "score": 0,
             "maximum": 100,
@@ -77,17 +94,21 @@ def validate_claimed_results(response, problem):
             "results": []
         }
 
-    # Support candidate results provided as a list or dictionary.
     if isinstance(candidate_results, dict):
+
         normalized_results = []
 
         for case_id, result in candidate_results.items():
+
             if isinstance(result, dict):
+
                 normalized_results.append({
                     "case_id": case_id,
                     **result
                 })
+
             else:
+
                 normalized_results.append({
                     "case_id": case_id,
                     "indices": result
@@ -98,7 +119,6 @@ def validate_claimed_results(response, problem):
     if not isinstance(candidate_results, list):
         candidate_results = []
 
-    # Index candidate results by case ID.
     results_by_id = {}
 
     for index, result in enumerate(candidate_results):
@@ -126,14 +146,18 @@ def validate_claimed_results(response, problem):
         candidate = results_by_id.get(case_id)
 
         if candidate is None:
+
             validation = {
                 "passed": False,
-                "feedback": "Candidate did not provide a result for this case."
+                "feedback": (
+                    "Candidate did not provide a result for this case."
+                )
             }
 
             indices = None
 
         else:
+
             indices = candidate.get(
                 "indices",
                 candidate.get("returned_indices")
@@ -173,33 +197,35 @@ def validate_claimed_results(response, problem):
     }
 
 
+# -------------------------------------------------
+# MAIN EVALUATION PIPELINE
+# -------------------------------------------------
+
 def evaluate_response(response, problem, source_code=None, timeout=5):
+
     """
     Evaluate an AI-generated computer science solution.
 
     Evaluation dimensions:
 
-    1. Written reasoning: 50%
-    2. Independent claimed-result validation: 25%
-    3. Actual submitted Python code execution: 25%
-
-    Parameters:
-        response (dict or str): AI-generated explanation and claimed results.
-        problem (dict): Problem statement and independent validation cases.
-        source_code (str): Submitted Python implementation.
-        timeout (int): Maximum execution time in seconds.
-
-    Returns:
-        dict: Combined evaluation score and detailed results.
+    1. Written reasoning: 40%
+    2. Claimed-answer validation: 20%
+    3. Actual code execution: 25%
+    4. Reasoning-to-code consistency: 15%
     """
 
     # -------------------------------------------------
-    # 1. Evaluate written reasoning
+    # 1. EVALUATE WRITTEN REASONING
     # -------------------------------------------------
 
-    answer = get_reasoning_text(response)
+    #answer = get_reasoning_text(response)
+    #preserve structured data for reasoning evaluation
+    reasoning_data = get_reasoning_data(response)
 
-    reasoning_result = evaluate_reasoning(answer)
+    reasoning_result = evaluate_reasoning(reasoning_data)
+
+    #convert the same data into text for consistency analysis
+    answer = get_reasoning_text(response)
 
     reasoning_score = reasoning_result.get("score", 0)
 
@@ -213,7 +239,7 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
     )
 
     # -------------------------------------------------
-    # 2. Independently validate claimed answers
+    # 2. VALIDATE CLAIMED ANSWERS
     # -------------------------------------------------
 
     validation_result = validate_claimed_results(
@@ -228,7 +254,7 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
     )
 
     # -------------------------------------------------
-    # 3. Execute submitted Python implementation
+    # 3. EXECUTE SUBMITTED PYTHON CODE
     # -------------------------------------------------
 
     if source_code is None or not source_code.strip():
@@ -255,7 +281,6 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
 
     execution_score = execution_result.get("score", 0)
 
-    # Only completed executions receive execution points.
     if execution_result.get("status") != "COMPLETED":
         execution_score = 0
 
@@ -269,19 +294,56 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
     )
 
     # -------------------------------------------------
-    # 4. Calculate combined evaluation score
+    # 4. EVALUATE REASONING-TO-CODE CONSISTENCY
+    # -------------------------------------------------
+
+    if source_code is None or not source_code.strip():
+
+        consistency_result = {
+            "passed": False,
+            "score": 0,
+            "verdict": "NOT_EVALUATED",
+            "feedback": (
+                "Consistency evaluation requires a Python implementation."
+            ),
+            "findings": [],
+            "code_features": {},
+            "reasoning_claims": {}
+        }
+
+    else:
+
+        consistency_result = evaluate_consistency(
+            answer,
+            source_code
+        )
+
+    consistency_score = consistency_result.get("score", 0)
+
+    consistency_score = max(
+        0,
+        min(100, consistency_score)
+    )
+
+    weighted_consistency_score = (
+        consistency_score * CONSISTENCY_WEIGHT / 100
+    )
+
+    # -------------------------------------------------
+    # 5. CALCULATE OVERALL SCORE
     # -------------------------------------------------
 
     overall_score = (
         weighted_reasoning_score
         + weighted_validation_score
         + weighted_execution_score
+        + weighted_consistency_score
     )
 
     overall_score = round(overall_score, 2)
 
     # -------------------------------------------------
-    # 5. Determine final verdict
+    # 6. DETERMINE FINAL VERDICT
     # -------------------------------------------------
 
     if overall_score >= PASS_THRESHOLD:
@@ -294,20 +356,24 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
         verdict = "FAIL"
 
     # -------------------------------------------------
-    # 6. Prepare evaluation summary
+    # 7. RETURN COMPLETE EVALUATION
     # -------------------------------------------------
 
     return {
+
         "score": overall_score,
         "maximum": 100,
         "verdict": verdict,
 
-        # Individual evaluation scores
+        # Individual scores
+
         "reasoning_score": round(reasoning_score, 2),
         "validation_score": round(validation_score, 2),
         "execution_score": round(execution_score, 2),
+        "consistency_score": round(consistency_score, 2),
 
-        # Weighted contributions
+        # Weighted scores
+
         "weighted_reasoning_score": round(
             weighted_reasoning_score, 2
         ),
@@ -320,16 +386,23 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
             weighted_execution_score, 2
         ),
 
+        "weighted_consistency_score": round(
+            weighted_consistency_score, 2
+        ),
+
         # Reasoning details
+
         "reasoning_details": reasoning_result,
 
         # Claimed-answer validation details
+
         "validation_details": validation_result,
 
         "passed_test_cases": validation_result["passed_cases"],
         "total_test_cases": validation_result["total_cases"],
 
-        # Actual code execution details
+        # Code execution details
+
         "execution_details": execution_result,
 
         "execution_status": execution_result["status"],
@@ -344,13 +417,20 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
             execution_result.get("total_test_cases", 0)
         ),
 
+        # Consistency details
+
+        "consistency_details": consistency_result,
+
         # Evaluation criteria
+
         "criteria": reasoning_result.get("criteria", []),
 
-        # Overall feedback
+        # Feedback
+
         "feedback": {
             "reasoning": reasoning_result.get("verdict"),
             "validation": validation_result["feedback"],
-            "execution": execution_result["feedback"]
+            "execution": execution_result["feedback"],
+            "consistency": consistency_result["feedback"]
         }
     }
