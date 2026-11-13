@@ -96,6 +96,16 @@ def test_inconsistent_hash_map_claim():
     assert result["score"] < 100
 
 
+def test_brute_force_claim_conflicts_with_single_pass_code():
+
+    result = evaluate_consistency(
+        "Try every pair using brute force in O(n^2) time.",
+        HASH_MAP_CODE
+    )
+
+    assert result["score"] < 100
+
+
 def test_missing_two_sum_function():
 
     result = evaluate_consistency(

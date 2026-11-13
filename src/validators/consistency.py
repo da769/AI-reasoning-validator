@@ -46,6 +46,12 @@ def analyze_code_structure(source_code):
             features["uses_dictionary"] = True
             self.generic_visit(node)
 
+        def visit_Call(self, node):
+            if isinstance(node.func, ast.Name) and node.func.id == "dict":
+                features["uses_dictionary"] = True
+
+            self.generic_visit(node)
+
         def visit_For(self, node):
 
             features["uses_loops"] = True
@@ -115,6 +121,7 @@ def analyze_reasoning_claims(answer):
         "nested loop" in answer
         or "two loops" in answer
         or "double loop" in answer
+        or re.search(r"\bbrute[- ]force\b", answer)
     ):
         claims["claims_nested_loops"] = True
 

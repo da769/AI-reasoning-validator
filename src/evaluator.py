@@ -126,7 +126,7 @@ def validate_claimed_results(response, problem):
         if not isinstance(result, dict):
             continue
 
-        case_id = result.get("case_id")
+        case_id = result.get("case_id", result.get("test_id"))
 
         if case_id is None:
             case_id = f"case_{index + 1:03d}"
@@ -140,7 +140,7 @@ def validate_claimed_results(response, problem):
 
         case_id = case.get(
             "case_id",
-            f"case_{index + 1:03d}"
+            case.get("test_id", f"case_{index + 1:03d}")
         )
 
         candidate = results_by_id.get(case_id)
@@ -305,6 +305,19 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
             "verdict": "NOT_EVALUATED",
             "feedback": (
                 "Consistency evaluation requires a Python implementation."
+            ),
+            "findings": [],
+            "code_features": {},
+            "reasoning_claims": {}
+        }
+
+    elif not answer.strip():
+        consistency_result = {
+            "passed": False,
+            "score": 0,
+            "verdict": "NOT_EVALUATED",
+            "feedback": (
+                "Consistency evaluation requires an answer or explanation."
             ),
             "findings": [],
             "code_features": {},
