@@ -96,13 +96,27 @@ def generate_report(problem_id, evaluation):
         f"{evaluation['execution_total_cases']}"
     )
 
-    for result in evaluation["execution_details"]["results"]:
+    for index, result in enumerate(
+        evaluation["execution_details"]["results"],
+        start=1,
+    ):
 
-        status = "PASS" if result["passed"] else "FAIL"
+        status = "PASS" if result.get("passed", False) else "FAIL"
+
+        case_id = (
+            result.get("case_id")
+            or result.get("test_case")
+            or result.get("name")
+            or f"Test case {index}"
+        )
+
+        feedback = result.get(
+            "feedback",
+            result.get("error", "No additional feedback."),
+        )
 
         print(
-            f"  {result['case_id']}: {status}"
-            f" - {result['feedback']}"
+            f"  {case_id}: {status} - {feedback}"
         )
 
     # -----------------------------------------
