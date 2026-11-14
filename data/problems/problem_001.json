@@ -2,6 +2,7 @@
     "id": "problem_001",
     "category": "algorithms",
     "difficulty": "medium",
+    "title": "Two Sum",
     "question": "Given an array of integers and a target value, return the indices of two distinct elements whose sum equals the target. Explain the algorithm and its time complexity.",
     "constraints": [
         "The same element cannot be used twice.",
@@ -13,6 +14,28 @@
         "single_pass",
         "O(n)_average_time"
     ],
+    "function_name": "two_sum",
+    "validator": "two_sum",
+    "starter_code": "def two_sum(values, target):\n    seen = {}\n    for index, value in enumerate(values):\n        complement = target - value\n        if complement in seen:\n            return [seen[complement], index]\n        seen[value] = index\n    return None",
+    "reasoning_rubric": {
+        "criteria": [
+            {
+                "name": "Hash-map strategy",
+                "concepts": ["hash_map"],
+                "maximum": 40
+            },
+            {
+                "name": "Distinct input elements",
+                "concepts": ["distinct_indices"],
+                "maximum": 30
+            },
+            {
+                "name": "Linear average-time complexity",
+                "concepts": ["linear_average_time"],
+                "maximum": 30
+            }
+        ]
+    },
     "validation_cases": [
         {
             "test_id": "case_001",

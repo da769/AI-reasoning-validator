@@ -1,0 +1,45 @@
+{
+    "id": "problem_003",
+    "category": "algorithms",
+    "difficulty": "easy",
+    "title": "Palindrome Check",
+    "question": "Return whether a string reads identically forwards and backwards.",
+    "constraints": [
+        "Compare the complete input string.",
+        "The empty string is a palindrome."
+    ],
+    "function_name": "is_palindrome",
+    "validator": "exact",
+    "starter_code": "def is_palindrome(value):\n    return value == value[::-1]",
+    "reasoning_rubric": {
+        "criteria": [
+            {
+                "name": "Palindrome property",
+                "concepts": ["palindrome"],
+                "maximum": 100
+            }
+        ]
+    },
+    "validation_cases": [
+        {
+            "case_id": "simple",
+            "args": ["level"],
+            "expected": true
+        },
+        {
+            "case_id": "not-palindrome",
+            "args": ["python"],
+            "expected": false
+        },
+        {
+            "case_id": "single-character",
+            "args": ["a"],
+            "expected": true
+        },
+        {
+            "case_id": "empty",
+            "args": [""],
+            "expected": true
+        }
+    ]
+}

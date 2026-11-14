@@ -31,7 +31,12 @@ def validate_two_sum_result(values, target, indices):
 
     first, second = indices
 
-    if not isinstance(first, int) or not isinstance(second, int):
+    if (
+        isinstance(first, bool)
+        or isinstance(second, bool)
+        or not isinstance(first, int)
+        or not isinstance(second, int)
+    ):
         return {
             "passed": False,
             "feedback": "Indices must be integers."
@@ -64,4 +69,70 @@ def validate_two_sum_result(values, target, indices):
     return {
         "passed": True,
         "feedback": "Valid pair of distinct indices returned."
+    }
+
+
+def _strictly_equal(actual, expected):
+    if type(actual) is not type(expected):
+        return False
+
+    if isinstance(actual, list):
+        return (
+            len(actual) == len(expected)
+            and all(
+                _strictly_equal(left, right)
+                for left, right in zip(actual, expected)
+            )
+        )
+
+    if isinstance(actual, dict):
+        return (
+            actual.keys() == expected.keys()
+            and all(
+                _strictly_equal(actual[key], expected[key])
+                for key in actual
+            )
+        )
+
+    return actual == expected
+
+
+def validate_problem_result(problem, case, result):
+    validator = problem.get("validator", "two_sum")
+
+    if validator == "two_sum":
+        if "values" not in case or "target" not in case:
+            return {
+                "passed": False,
+                "feedback": (
+                    "Two Sum test cases require values and target."
+                )
+            }
+
+        return validate_two_sum_result(
+            case["values"],
+            case["target"],
+            result
+        )
+
+    if validator == "exact":
+        if "expected" not in case:
+            return {
+                "passed": False,
+                "feedback": "Exact-match test cases require expected output."
+            }
+
+        passed = _strictly_equal(result, case["expected"])
+        return {
+            "passed": passed,
+            "feedback": (
+                "Returned value matches the expected output."
+                if passed
+                else "Returned value does not match the expected output."
+            )
+        }
+
+    return {
+        "passed": False,
+        "feedback": f"Unsupported result validator: {validator}."
     }

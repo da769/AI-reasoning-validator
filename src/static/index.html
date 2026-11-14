@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Reasoning Lab — AI Evaluation</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="/" aria-label="Reasoning Lab home">
+        <span class="brand-mark">R</span>
+        <span>reasoning<span class="brand-light">lab</span></span>
+      </a>
+      <div class="side-label">WORKSPACE</div>
+      <a class="side-link active" href="#workspace"><span>◫</span> Evaluator</a>
+      <a class="side-link" href="#problem-panel"><span>⌘</span> Problem library</a>
+      <div class="sidebar-bottom">
+        <div class="avatar">RL</div>
+        <div><strong>Local workspace</strong><small>Private by default</small></div>
+        <span class="online-dot"></span>
+      </div>
+    </aside>
+
+    <main id="workspace">
+      <header class="topbar">
+        <div class="breadcrumb">Workspace <span>/</span> <strong>Evaluator</strong></div>
+        <div class="topbar-meta"><span class="secure-mark">●</span> Runs on this machine</div>
+      </header>
+
+      <section class="page-heading">
+        <div>
+          <div class="eyebrow"><span class="eyebrow-line"></span> AI RESPONSE ANALYSIS</div>
+          <h1>Evaluate a solution<span class="heading-dot">.</span></h1>
+          <p>Assess the reasoning, verify claimed outputs, and test the implementation.</p>
+        </div>
+        <div class="heading-badge"><span>✳</span> Deterministic evaluation</div>
+      </section>
+
+      <div class="content-grid">
+        <section class="submission-column" aria-label="Submission form">
+          <div class="panel problem-panel" id="problem-panel">
+            <div class="section-title">
+              <span class="step-number">01</span>
+              <div><h2>Choose a problem</h2><p>Select a task from your local library.</p></div>
+            </div>
+            <label class="sr-only" for="problem-select">Problem</label>
+            <select id="problem-select" class="field-select"></select>
+            <div class="problem-summary" id="problem-summary"></div>
+            <div class="case-caption" id="case-caption">TEST INPUTS · EXPECTED OUTPUTS HIDDEN</div>
+            <div class="case-summary" id="case-summary"></div>
+            <div id="custom-problem-wrap" hidden>
+              <label class="custom-label" for="custom-problem">Custom problem JSON specification</label>
+              <textarea id="custom-problem" class="text-field json-field custom-problem-field" spellcheck="false"></textarea>
+              <div class="field-footer"><span>Include function_name, validator, validation_cases and expected outputs.</span><span>JSON</span></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="section-title">
+              <span class="step-number">02</span>
+              <div><h2>Explain your approach</h2><p>Describe the algorithm, constraints, and complexity.</p></div>
+            </div>
+            <label class="sr-only" for="reasoning">Reasoning</label>
+            <textarea id="reasoning" class="text-field reasoning-field" placeholder="Explain how your solution works and why it is correct…"></textarea>
+            <div class="field-footer"><span>Structured answer or plain-language explanation</span><span id="reasoning-count">0 characters</span></div>
+          </div>
+
+          <div class="panel">
+            <div class="section-title">
+              <span class="step-number">03</span>
+              <div><h2>Claimed test results <span class="optional">OPTIONAL</span></h2><p>JSON array of outputs keyed by case ID.</p></div>
+            </div>
+            <label class="sr-only" for="claimed-results">Claimed test results JSON</label>
+            <textarea id="claimed-results" class="text-field json-field" spellcheck="false" placeholder='[{"case_id":"first","result":2}]'></textarea>
+            <div class="field-footer"><span>Checked independently against expected outputs</span><button class="text-button" id="results-template" type="button">Insert case template ↗</button></div>
+          </div>
+
+          <div class="panel code-panel">
+            <div class="section-title">
+              <span class="step-number">04</span>
+              <div><h2>Python implementation</h2><p>Provide the required function to execute against test cases.</p></div>
+              <span class="language-chip">PYTHON 3</span>
+            </div>
+            <label class="sr-only" for="source-code">Python source code</label>
+            <textarea id="source-code" class="text-field code-field" spellcheck="false" placeholder="def solution(...):&#10;    # Write your implementation&#10;    pass"></textarea>
+            <div class="editor-footer"><span><i></i> Python</span><span id="code-count">0 lines</span></div>
+          </div>
+
+          <div class="form-actions">
+            <span class="time-note"><span>◷</span> Usually takes a few seconds</span>
+            <button id="evaluate-button" class="primary-button" type="button"><span>Run evaluation</span><span class="button-arrow">↗</span></button>
+          </div>
+          <div class="safety-note">Submitted code runs in a local subprocess. This tool is for trusted code; it is not a secure sandbox for untrusted submissions.</div>
+          <div id="error-message" class="error-message" role="alert" hidden></div>
+        </section>
+
+        <aside class="results-column" aria-label="Evaluation results">
+          <div class="results-topline">
+            <div><div class="eyebrow"><span class="eyebrow-line"></span> LIVE REPORT</div><h2>Evaluation results</h2></div>
+            <span id="report-state" class="status-pill idle"><span></span> AWAITING RUN</span>
+          </div>
+
+          <div id="empty-state" class="panel empty-state">
+            <div class="empty-graphic"><span></span><span></span><span></span><span></span><b>✳</b></div>
+            <h3>Your report will appear here</h3>
+            <p>Submit an explanation and implementation to see a detailed breakdown.</p>
+            <div class="empty-checks"><span>✓ Reasoning quality</span><span>✓ Output validation</span><span>✓ Code execution</span></div>
+          </div>
+
+          <div id="report-panel" hidden>
+            <div class="panel score-panel">
+              <div class="score-main"><div><span class="metric-label">OVERALL SCORE</span><div class="score-number"><span id="overall-score">—</span><small>/100</small></div></div><div id="verdict-badge" class="verdict-badge">—</div></div>
+              <div class="score-track"><span id="overall-track"></span></div>
+              <div class="score-caption"><span>Evaluation confidence</span><strong id="score-caption">Ready</strong></div>
+            </div>
+
+            <div class="panel breakdown-panel">
+              <div class="result-section-heading"><h3>Score breakdown</h3><span>WEIGHTED</span></div>
+              <div id="score-breakdown" class="score-breakdown"></div>
+            </div>
+
+            <div class="panel">
+              <div class="result-section-heading"><h3>Claimed results</h3><span id="claimed-count" class="count-label"></span></div>
+              <div id="claimed-list" class="case-list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="result-section-heading"><h3>Code execution</h3><span id="execution-status" class="mini-status"></span></div>
+              <div id="execution-summary" class="execution-summary"></div>
+              <div id="execution-list" class="case-list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="result-section-heading"><h3>Reasoning rubric</h3><span id="reasoning-verdict" class="mini-status"></span></div>
+              <div id="reasoning-list" class="rubric-list"></div>
+            </div>
+
+            <div class="panel">
+              <div class="result-section-heading"><h3>Consistency check</h3><span id="consistency-verdict" class="mini-status"></span></div>
+              <p id="consistency-feedback" class="consistency-feedback"></p>
+              <div id="consistency-list" class="rubric-list"></div>
+            </div>
+
+            <div class="download-actions">
+              <button id="download-json" class="secondary-button" type="button"><span>↓</span> Download JSON</button>
+              <button id="download-pdf" class="secondary-button" type="button"><span>↓</span> Download PDF</button>
+            </div>
+          </div>
+          <footer class="results-footer"><span>REASONING LAB</span><span>Local evaluation · No AI API required</span></footer>
+        </aside>
+      </div>
+    </main>
+  </div>
+</body>
+</html>

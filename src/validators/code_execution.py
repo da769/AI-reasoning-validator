@@ -6,11 +6,16 @@ import tempfile
 import time
 from pathlib import Path
 
-from src.validators.algorithm import validate_two_sum_result
+from src.validators.algorithm import validate_problem_result
 from src.validators.code_quality import check_code_security
 
 
-def evaluate_python_submission(source_code, test_cases, timeout=5):
+def evaluate_python_submission(
+    source_code,
+    test_cases,
+    timeout=5,
+    problem=None
+):
     """
     Evaluate a submitted Python implementation of Two Sum.
 
@@ -26,6 +31,17 @@ def evaluate_python_submission(source_code, test_cases, timeout=5):
     This implementation is NOT a secure sandbox.
     Do not use it to execute arbitrary untrusted code.
     """
+    problem = problem or {}
+    function_name = problem.get("function_name", "two_sum")
+    validator = problem.get("validator", "two_sum")
+
+    if not isinstance(function_name, str) or not function_name.isidentifier():
+        return {
+            "status": "REJECTED",
+            "passed": False,
+            "feedback": "The required function name is invalid.",
+            "results": []
+        }
 
     # 1. Check whether source code is provided
     if not isinstance(source_code, str) or not source_code.strip():
@@ -70,15 +86,42 @@ def evaluate_python_submission(source_code, test_cases, timeout=5):
         }
 
     for case in test_cases:
-        if (
-            not isinstance(case, dict)
-            or "values" not in case
-            or "target" not in case
+        if not isinstance(case, dict):
+            return {
+                "status": "REJECTED",
+                "passed": False,
+                "feedback": "Each test case must be an object.",
+                "results": []
+            }
+
+        if "args" in case:
+            if (
+                not isinstance(case["args"], list)
+                or not isinstance(case.get("kwargs", {}), dict)
+            ):
+                return {
+                    "status": "REJECTED",
+                    "passed": False,
+                    "feedback": (
+                        "Test case args must be a list and kwargs an object."
+                    ),
+                    "results": []
+                }
+        elif validator == "two_sum" and not all(
+            key in case for key in ("values", "target")
         ):
             return {
                 "status": "REJECTED",
                 "passed": False,
-                "feedback": "Each test case must contain values and target.",
+                "feedback": "Two Sum test cases require values and target.",
+                "results": []
+            }
+
+        if validator == "exact" and "expected" not in case:
+            return {
+                "status": "REJECTED",
+                "passed": False,
+                "feedback": "Exact-match test cases require expected output.",
                 "results": []
             }
 
@@ -92,6 +135,7 @@ def evaluate_python_submission(source_code, test_cases, timeout=5):
             test_cases_path = workspace / "test_cases.json"
             runner_path = workspace / "runner.py"
             output_path = workspace / "results.json"
+            configuration_path = workspace / "configuration.json"
 
             # Save candidate source code
             candidate_path.write_text(
@@ -102,6 +146,10 @@ def evaluate_python_submission(source_code, test_cases, timeout=5):
             # Save test cases
             test_cases_path.write_text(
                 json.dumps(test_cases),
+                encoding="utf-8"
+            )
+            configuration_path.write_text(
+                json.dumps({"function_name": function_name}),
                 encoding="utf-8"
             )
 
@@ -118,6 +166,7 @@ workspace = Path(__file__).parent
 candidate_path = workspace / "candidate.py"
 test_cases_path = workspace / "test_cases.json"
 output_path = workspace / "results.json"
+configuration_path = workspace / "configuration.json"
 
 results = []
 
@@ -134,20 +183,20 @@ try:
     candidate = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(candidate)
 
-    # Check required function
-    if not hasattr(candidate, "two_sum"):
-        raise AttributeError(
-            "Required function 'two_sum(values, target)' was not found."
-        )
-
-    if not callable(candidate.two_sum):
-        raise TypeError(
-            "'two_sum' must be a callable function."
-        )
-
     # Load test cases
     with open(test_cases_path, "r", encoding="utf-8") as file:
         test_cases = json.load(file)
+
+    with open(configuration_path, "r", encoding="utf-8") as file:
+        configuration = json.load(file)
+
+    function_name = configuration["function_name"]
+    function = getattr(candidate, function_name, None)
+
+    if not callable(function):
+        raise AttributeError(
+            f"Required function '{function_name}' was not found or is not callable."
+        )
 
     # Execute candidate function for each test case
     for case in test_cases:
@@ -155,15 +204,19 @@ try:
         start_time = time.perf_counter()
 
         try:
-            returned_indices = candidate.two_sum(
-                case["values"],
-                case["target"]
+            if "args" in case:
+                args = case["args"]
+            else:
+                args = [case["values"], case["target"]]
+            returned_result = function(
+                *args,
+                **case.get("kwargs", {})
             )
 
             elapsed_time = time.perf_counter() - start_time
 
             results.append({
-                "returned_indices": returned_indices,
+                "returned_result": returned_result,
                 "execution_time": elapsed_time,
                 "error": None
             })
@@ -173,7 +226,7 @@ try:
             elapsed_time = time.perf_counter() - start_time
 
             results.append({
-                "returned_indices": None,
+                "returned_result": None,
                 "execution_time": elapsed_time,
                 "error": str(error)
             })
@@ -274,8 +327,9 @@ except Exception as error:
                 start=1
             ):
 
-                returned_indices = execution_result.get(
-                    "returned_indices"
+                returned_result = execution_result.get(
+                    "returned_result",
+                    execution_result.get("returned_indices")
                 )
 
                 execution_error = execution_result.get("error")
@@ -287,10 +341,10 @@ except Exception as error:
                     }
 
                 else:
-                    validation = validate_two_sum_result(
-                        case["values"],
-                        case["target"],
-                        returned_indices
+                    validation = validate_problem_result(
+                        problem,
+                        case,
+                        returned_result
                     )
 
                 case_passed = validation["passed"]
@@ -300,8 +354,17 @@ except Exception as error:
 
                 validated_results.append({
                     "test_case": index,
+                    "case_id": case.get(
+                        "case_id",
+                        case.get("test_id", f"case_{index:03d}")
+                    ),
                     "passed": case_passed,
-                    "returned_indices": returned_indices,
+                    "returned_result": returned_result,
+                    "returned_indices": (
+                        returned_result
+                        if validator == "two_sum"
+                        else None
+                    ),
                     "execution_time": execution_result.get(
                         "execution_time"
                     ),

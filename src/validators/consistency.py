@@ -2,7 +2,7 @@ import ast
 import re
 
 
-def analyze_code_structure(source_code):
+def analyze_code_structure(source_code, function_name="two_sum"):
     """
     Analyze Python code using AST.
 
@@ -27,19 +27,33 @@ def analyze_code_structure(source_code):
         "uses_dictionary": False,
         "uses_nested_loops": False,
         "has_two_sum_function": False,
-        "uses_loops": False
+        "has_required_function": False,
+        "uses_loops": False,
+        "uses_binary_search_pattern": False
     }
 
     class CodeAnalyzer(ast.NodeVisitor):
 
         def __init__(self):
             self.loop_depth = 0
+            self.names = set()
+            self.has_subscript = False
 
         def visit_FunctionDef(self, node):
+
+            if node.name == function_name:
+                features["has_required_function"] = True
 
             if node.name == "two_sum":
                 features["has_two_sum_function"] = True
 
+            self.generic_visit(node)
+
+        def visit_Name(self, node):
+            self.names.add(node.id.lower())
+
+        def visit_Subscript(self, node):
+            self.has_subscript = True
             self.generic_visit(node)
 
         def visit_Dict(self, node):
@@ -80,6 +94,21 @@ def analyze_code_structure(source_code):
 
     analyzer = CodeAnalyzer()
     analyzer.visit(tree)
+    analyzer_names = analyzer.names
+    has_search_bounds = (
+        {"low", "high"}.issubset(analyzer_names)
+        or {"left", "right"}.issubset(analyzer_names)
+        or {"start", "end"}.issubset(analyzer_names)
+    )
+    has_midpoint = bool(
+        analyzer_names.intersection({"mid", "middle", "midpoint"})
+    )
+    features["uses_binary_search_pattern"] = (
+        features["uses_loops"]
+        and has_search_bounds
+        and has_midpoint
+        and analyzer.has_subscript
+    )
 
     return {
         "passed": True,
@@ -100,7 +129,9 @@ def analyze_reasoning_claims(answer):
         "claims_hash_map": False,
         "claims_nested_loops": False,
         "claims_linear_time": False,
-        "claims_quadratic_time": False
+        "claims_quadratic_time": False,
+        "claims_binary_search": False,
+        "claims_logarithmic_time": False
     }
 
     # Hash map claims
@@ -116,6 +147,8 @@ def analyze_reasoning_claims(answer):
     ):
         claims["claims_hash_map"] = True
 
+    claims["claims_binary_search"] = "binary search" in answer
+
     # Nested-loop claims
     if (
         "nested loop" in answer
@@ -129,13 +162,20 @@ def analyze_reasoning_claims(answer):
     if re.search(r"o\s*\(\s*n\s*\)", answer):
         claims["claims_linear_time"] = True
 
+    if re.search(r"o\s*\(\s*log\s*n\s*\)", answer):
+        claims["claims_logarithmic_time"] = True
+
     if re.search(r"o\s*\(\s*n\s*(?:\*\s*n|²|\^2)\s*\)", answer):
         claims["claims_quadratic_time"] = True
 
     return claims
 
 
-def evaluate_consistency(answer, source_code):
+def evaluate_consistency(
+    answer,
+    source_code,
+    function_name="two_sum"
+):
     """
     Compare written algorithm claims against
     the actual Python implementation.
@@ -144,7 +184,7 @@ def evaluate_consistency(answer, source_code):
     not a complete semantic code analyzer.
     """
 
-    code_analysis = analyze_code_structure(source_code)
+    code_analysis = analyze_code_structure(source_code, function_name)
 
     if not code_analysis["passed"]:
         return {
@@ -160,6 +200,37 @@ def evaluate_consistency(answer, source_code):
     reasoning_claims = analyze_reasoning_claims(answer)
 
     findings = []
+
+    if reasoning_claims["claims_binary_search"]:
+        passed = code_features["uses_binary_search_pattern"]
+        findings.append({
+            "criterion": "Binary-search consistency",
+            "passed": passed,
+            "feedback": (
+                "The code structure is consistent with binary search."
+                if passed
+                else (
+                    "The explanation claims binary search, but the code "
+                    "does not show the expected bounds, midpoint, and "
+                    "indexed-search structure."
+                )
+            )
+        })
+
+    if reasoning_claims["claims_logarithmic_time"]:
+        passed = code_features["uses_binary_search_pattern"]
+        findings.append({
+            "criterion": "Time complexity consistency",
+            "passed": passed,
+            "feedback": (
+                "The code structure is consistent with logarithmic search."
+                if passed
+                else (
+                    "The explanation claims O(log n), but no binary-search "
+                    "structure was detected."
+                )
+            )
+        })
 
     # Check whether a hash map is claimed and implemented
     if reasoning_claims["claims_hash_map"]:
@@ -264,13 +335,13 @@ def evaluate_consistency(answer, source_code):
             })
 
     # Check required function
-    if not code_features["has_two_sum_function"]:
+    if not code_features["has_required_function"]:
 
         findings.append({
             "criterion": "Function availability",
             "passed": False,
             "feedback": (
-                "The required two_sum function was not detected."
+                f"The required {function_name} function was not detected."
             )
         })
 

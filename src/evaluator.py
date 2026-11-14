@@ -1,7 +1,7 @@
 import json
 
 from src.validators.reasoning import evaluate_reasoning
-from src.validators.algorithm import validate_two_sum_result
+from src.validators.algorithm import validate_problem_result
 from src.validators.code_execution import evaluate_python_submission
 from src.validators.consistency import evaluate_consistency
 
@@ -111,7 +111,7 @@ def validate_claimed_results(response, problem):
 
                 normalized_results.append({
                     "case_id": case_id,
-                    "indices": result
+                    "result": result
                 })
 
         candidate_results = normalized_results
@@ -158,16 +158,25 @@ def validate_claimed_results(response, problem):
 
         else:
 
-            indices = candidate.get(
+            candidate_result = candidate.get(
                 "indices",
-                candidate.get("returned_indices")
+                candidate.get(
+                    "result",
+                    candidate.get(
+                        "output",
+                        candidate.get(
+                            "answer",
+                            candidate.get("returned_indices")
+                        )
+                    )
+                )
             )
-
-            validation = validate_two_sum_result(
-                case["values"],
-                case["target"],
-                indices
+            validation = validate_problem_result(
+                problem,
+                case,
+                candidate_result
             )
+            indices = candidate_result
 
         if validation["passed"]:
             passed_cases += 1
@@ -175,7 +184,12 @@ def validate_claimed_results(response, problem):
         validated_results.append({
             "case_id": case_id,
             "passed": validation["passed"],
-            "indices": indices,
+            "result": indices,
+            "indices": (
+                indices
+                if problem.get("validator", "two_sum") == "two_sum"
+                else None
+            ),
             "feedback": validation["feedback"]
         })
 
@@ -222,7 +236,7 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
     #preserve structured data for reasoning evaluation
     reasoning_data = get_reasoning_data(response)
 
-    reasoning_result = evaluate_reasoning(reasoning_data)
+    reasoning_result = evaluate_reasoning(reasoning_data, problem)
 
     #convert the same data into text for consistency analysis
     answer = get_reasoning_text(response)
@@ -276,7 +290,8 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
         execution_result = evaluate_python_submission(
             source_code,
             problem.get("validation_cases", []),
-            timeout=timeout
+            timeout=timeout,
+            problem=problem
         )
 
     execution_score = execution_result.get("score", 0)
@@ -328,7 +343,8 @@ def evaluate_response(response, problem, source_code=None, timeout=5):
 
         consistency_result = evaluate_consistency(
             answer,
-            source_code
+            source_code,
+            function_name=problem.get("function_name", "two_sum")
         )
 
     consistency_score = consistency_result.get("score", 0)

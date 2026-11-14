@@ -1,4 +1,131 @@
-def evaluate_reasoning(answer):
+CONCEPT_ALIASES = {
+    "hash_map": (
+        "hash map",
+        "hash-map",
+        "dictionary",
+        "lookup table",
+        "map from values to indices",
+        "map each value to its index",
+        "values mapped to positions",
+        "mapping from values to their positions",
+        "position associated with each value"
+    ),
+    "single_pass": (
+        "single pass",
+        "one pass",
+        "examine each value once",
+        "visit each item once",
+        "once through",
+        "iterate through the array"
+    ),
+    "complement_lookup": (
+        "complement",
+        "wanted partner",
+        "value needed to reach the target",
+        "partner that reaches the target",
+        "target minus the current",
+        "target minus",
+        "difference between the target",
+        "remaining value"
+    ),
+    "distinct_indices": (
+        "distinct indices",
+        "different indices",
+        "cannot use the same element",
+        "different from the earlier position",
+        "two separate positions",
+        "different array positions",
+        "previously seen",
+        "previously visited",
+        "previous element"
+    ),
+    "linear_average_time": (
+        "o(n)",
+        "linear time",
+        "linear average",
+        "proportional to the input size",
+        "scales with the input size",
+        "grows linearly",
+        "expected linear time",
+        "average-case linear time",
+        "each item is processed once with constant-time lookup"
+    ),
+    "binary_search": (
+        "binary search",
+        "middle element",
+        "midpoint",
+        "halve the",
+        "halve the remaining",
+        "divide the search range",
+        "repeatedly discard half",
+        "cut the candidate range in half",
+        "narrow the search interval by half",
+        "halve the remaining candidates"
+    ),
+    "sorted_input": (
+        "sorted",
+        "in order",
+        "ordered input",
+        "ascending order",
+        "smallest to largest"
+    ),
+    "logarithmic_time": (
+        "o(log n)",
+        "logarithmic time",
+        "log n",
+        "halves the remaining"
+    ),
+    "palindrome": (
+        "palindrome",
+        "reads the same forwards and backwards",
+        "same in reverse",
+        "equal to its reverse",
+        "matches its reversed sequence",
+        "symmetric around the center"
+    )
+}
+
+
+def _answer_text(value):
+    if isinstance(value, dict):
+        return " ".join(_answer_text(item) for item in value.values())
+    if isinstance(value, (list, tuple)):
+        return " ".join(_answer_text(item) for item in value)
+    if value is None:
+        return ""
+    return str(value)
+
+
+def _has_concept_evidence(text, concept, custom_aliases):
+    aliases = custom_aliases.get(
+        concept,
+        CONCEPT_ALIASES.get(concept, (concept.replace("_", " "),))
+    )
+
+    for alias in aliases:
+        alias = str(alias).strip().lower()
+        if not alias:
+            continue
+
+        start = 0
+        while True:
+            position = text.find(alias, start)
+            if position < 0:
+                break
+
+            preceding_text = text[max(0, position - 24):position]
+            if not any(
+                marker in preceding_text
+                for marker in ("not ", "never ", "avoid ", "without ")
+            ):
+                return True
+
+            start = position + len(alias)
+
+    return False
+
+
+def evaluate_reasoning(answer, problem=None):
     """
     Evaluate a Two Sum algorithm explanation
     using a weighted 100-point rubric.
@@ -22,6 +149,50 @@ def evaluate_reasoning(answer):
                 "maximum": 100,
                 "passed": False
             }]
+        }
+
+    rubric = (problem or {}).get("reasoning_rubric", {})
+    rubric_criteria = rubric.get("criteria", [])
+    if rubric_criteria:
+        answer_text = _answer_text(answer).lower()
+        custom_aliases = (problem or {}).get("concept_aliases", {})
+        criteria = []
+
+        for rubric_criterion in rubric_criteria:
+            concepts = rubric_criterion.get("concepts", [])
+            evidence = {
+                concept: _has_concept_evidence(
+                    answer_text,
+                    concept,
+                    custom_aliases
+                )
+                for concept in concepts
+            }
+            passed = bool(concepts) and all(evidence.values())
+            criteria.append({
+                "name": rubric_criterion.get("name", "Reasoning criterion"),
+                "score": (
+                    rubric_criterion.get("maximum", 1)
+                    if passed else 0
+                ),
+                "maximum": rubric_criterion.get("maximum", 1),
+                "passed": passed,
+                "evidence": evidence
+            })
+
+        maximum_score = sum(item["maximum"] for item in criteria)
+        total_score = sum(item["score"] for item in criteria)
+        score = round(total_score / maximum_score * 100)
+        verdict = (
+            "PASS" if score >= 80
+            else "PARTIAL" if score >= 50
+            else "FAIL"
+        )
+        return {
+            "score": score,
+            "maximum": maximum_score,
+            "verdict": verdict,
+            "criteria": criteria
         }
 
     def text(*fields):
